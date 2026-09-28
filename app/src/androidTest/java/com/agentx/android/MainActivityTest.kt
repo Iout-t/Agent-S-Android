@@ -1,15 +1,14 @@
 package com.agentx.android
 
+import android.view.View
+import android.webkit.WebView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.action.ViewActions.replaceText
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
-import org.hamcrest.CoreMatchers.containsString
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,12 +20,18 @@ class MainActivityTest {
 
     @Test
     fun searchTaskIsPlannedAndBrowserSurfaceAppears() {
-        onView(withId(R.id.task_input))
-            .perform(replaceText("Search the web for Agent S GitHub"))
-        onView(withId(R.id.run_button)).perform(click())
+        activityRule.scenario.onActivity { activity ->
+            val input = activity.findViewById<EditText>(R.id.task_input)
+            val run = activity.findViewById<Button>(R.id.run_button)
+            val status = activity.findViewById<TextView>(R.id.status_text)
+            val results = activity.findViewById<WebView>(R.id.results_webview)
 
-        onView(withId(R.id.status_text))
-            .check(matches(withText(containsString("Agent S GitHub"))))
-        onView(withId(R.id.results_webview)).check(matches(isDisplayed()))
+            input.setText("Search the web for Agent S GitHub")
+            run.performClick()
+
+            assertTrue(status.text.toString().contains("Agent S GitHub"))
+            assertEquals(View.VISIBLE, results.visibility)
+            assertTrue(results.url.orEmpty().contains("google.com/search"))
+        }
     }
 }
