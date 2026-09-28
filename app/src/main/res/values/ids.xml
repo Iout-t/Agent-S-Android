@@ -1,0 +1,6 @@
+<resources>
+    <item name="task_input" type="id" />
+    <item name="run_button" type="id" />
+    <item name="status_text" type="id" />
+    <item name="results_webview" type="id" />
+</resources>
