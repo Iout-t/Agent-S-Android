@@ -32,14 +32,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: latest
+          cmdline-tools-version: '12266719'
           accept-android-sdk-licenses: true
+          packages: ''
 
       - name: Install Android SDK packages
         shell: bash
         run: |
-          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install \
+          yes | sdkmanager --install \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
