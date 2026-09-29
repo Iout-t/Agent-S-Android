@@ -64,7 +64,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -wipe-data
           script: >-
-            adb wait-for-device && i=0; while [ "$i" -lt 60 ]; do boot_completed="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")"; if [ "$boot_completed" = "1" ] && adb shell cmd package list packages >/dev/null 2>&1; then break; fi; i=$((i + 1)); sleep 5; done; if [ "$boot_completed" != "1" ] || ! adb shell cmd package list packages >/dev/null 2>&1; then echo "Android package service did not become ready in time" >&2; adb shell getprop sys.boot_completed || true; adb shell service list || true; exit 1; fi; ./gradlew connectedDebugAndroidTest
+            adb wait-for-device && i=0; stable=0; while [ "$i" -lt 120 ]; do boot_completed="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$boot_completed" = "1" ] && echo "$package_service" | grep -q "found" && adb shell cmd package list packages >/dev/null 2>&1; then stable=$((stable + 1)); else stable=0; fi; if [ "$stable" -ge 6 ]; then break; fi; i=$((i + 1)); sleep 5; done; if [ "$boot_completed" != "1" ] || [ "$stable" -lt 6 ] || ! adb shell cmd package list packages >/dev/null 2>&1; then echo "Android package service did not remain ready in time" >&2; adb shell getprop sys.boot_completed || true; adb shell service check package || true; adb shell service list || true; exit 1; fi; ./gradlew connectedDebugAndroidTest
 
       - name: Upload test reports
         if: always()
