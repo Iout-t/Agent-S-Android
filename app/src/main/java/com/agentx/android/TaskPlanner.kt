@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 
 enum class TaskKind {
     APP_TASK,
+    DEVICE_TASK,
     FORM_TASK,
     WEB_SEARCH,
     BACKEND_RUN
@@ -20,6 +21,7 @@ data class TaskPlan(
     val actionDescription: String = instruction,
     val requiresCredentials: Boolean = false,
     val credentialReason: String? = null,
+    val automationAction: AutomationAction? = null,
     val summary: String
 )
 
@@ -82,6 +84,16 @@ object TaskPlanner {
                 url = link,
                 actionDescription = "open the Google Form",
                 summary = "Google Form ready for guided completion"
+            )
+        }
+
+        AutomationAction.from(cleanInstruction)?.let { action ->
+            return TaskPlan(
+                kind = TaskKind.DEVICE_TASK,
+                instruction = cleanInstruction,
+                actionDescription = action.label,
+                automationAction = action,
+                summary = "Device automation ready: ${action.label}"
             )
         }
 

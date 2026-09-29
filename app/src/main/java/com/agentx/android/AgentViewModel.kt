@@ -28,6 +28,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AgentRepository()
     private val credentialStore = CredentialStore(application)
     private val executor = AppTaskExecutor(application)
+    private val deviceExecutor = DeviceAutomationExecutor(application)
     private val _state = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = _state.asStateFlow()
     private var pendingPlan: TaskPlan? = null
@@ -55,6 +56,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     searchUrl = plan.url,
                     query = plan.instruction
                 )
+            }
+
+            TaskKind.DEVICE_TASK -> {
+                val result = deviceExecutor.execute(plan)
+                _state.value = AgentUiState(message = result.message)
             }
 
             TaskKind.APP_TASK -> {

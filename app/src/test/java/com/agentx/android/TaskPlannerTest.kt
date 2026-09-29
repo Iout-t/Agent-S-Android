@@ -57,6 +57,22 @@ class TaskPlannerTest {
     }
 
     @Test
+    fun automationCatalogRecognizesConnectivityTasks() {
+        val plan = TaskPlanner.plan("Turn on Wi-Fi")
+
+        assertEquals(TaskKind.DEVICE_TASK, plan.kind)
+        assertEquals(AutomationAction.WIFI, plan.automationAction)
+    }
+
+    @Test
+    fun automationCatalogRecognizesUiTasks() {
+        val plan = TaskPlanner.plan("Use accessibility to tap the Confirm button")
+
+        assertEquals(TaskKind.DEVICE_TASK, plan.kind)
+        assertEquals(AutomationAction.UI_AUTOMATION, plan.automationAction)
+    }
+
+    @Test
     fun missingYouTubeFallbackStaysOnYouTube() {
         assertEquals(
             "https://www.youtube.com/results?search_query=bass+booster+songs",

@@ -1,0 +1,3 @@
+<resources>
+    <string name="accessibility_service_description">DailyDay uses this optional service to perform user-requested UI interactions such as taps, swipes, and text entry.</string>
+</resources>
