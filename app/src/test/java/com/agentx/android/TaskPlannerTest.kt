@@ -109,12 +109,13 @@ class TaskPlannerTest {
     }
 
     @Test
-    fun ordinaryInstructionDelegatesToBackend() {
+    fun darkModeInstructionUsesDeviceAutomation() {
         val plan = TaskPlanner.plan("Enable dark mode across the phone")
 
-        assertEquals(TaskKind.BACKEND_RUN, plan.kind)
+        assertEquals(TaskKind.DEVICE_TASK, plan.kind)
+        assertEquals(AutomationAction.DARK_MODE, plan.automationAction)
         assertEquals(null, plan.url)
-        assertTrue(plan.summary.contains("DailyDay"))
+        assertTrue(plan.summary.contains("dark"))
     }
 
     @Test(expected = IllegalArgumentException::class)
