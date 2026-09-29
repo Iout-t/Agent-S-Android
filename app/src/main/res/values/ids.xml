@@ -3,4 +3,11 @@
     <item name="run_button" type="id" />
     <item name="status_text" type="id" />
     <item name="results_webview" type="id" />
+    <item name="credential_panel" type="id" />
+    <item name="credential_title" type="id" />
+    <item name="credential_reason" type="id" />
+    <item name="username_input" type="id" />
+    <item name="password_input" type="id" />
+    <item name="continue_button" type="id" />
+    <item name="cancel_button" type="id" />
 </resources>

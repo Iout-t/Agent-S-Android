@@ -2,13 +2,13 @@ package com.agentx.android
 
 import android.graphics.Color
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 
         val input = EditText(this).apply {
             id = R.id.task_input
-            hint = "Try: Search the web for Agent S GitHub"
+            hint = "Try: Open YouTube and search for bass booster songs"
             setSingleLine(false)
             minLines = 2
         }
@@ -51,13 +51,55 @@ class MainActivity : AppCompatActivity() {
                 1f
             )
         }
+
+        val credentialPanel = LinearLayout(this).apply {
+            id = R.id.credential_panel
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, 8, 0, 16)
+        }
+        val credentialTitle = TextView(this).apply {
+            id = R.id.credential_title
+            textSize = 18f
+            setTextColor(Color.BLACK)
+        }
+        val credentialReason = TextView(this).apply {
+            id = R.id.credential_reason
+            setTextColor(Color.DKGRAY)
+            setPadding(0, 4, 0, 8)
+        }
+        val username = EditText(this).apply {
+            id = R.id.username_input
+            hint = "Username or email"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        }
+        val password = EditText(this).apply {
+            id = R.id.password_input
+            hint = "Password"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val continueButton = Button(this).apply {
+            id = R.id.continue_button
+            text = "Continue securely"
+        }
+        val cancelButton = Button(this).apply {
+            id = R.id.cancel_button
+            text = "Cancel"
+        }
+        credentialPanel.addView(credentialTitle)
+        credentialPanel.addView(credentialReason)
+        credentialPanel.addView(username)
+        credentialPanel.addView(password)
+        credentialPanel.addView(continueButton)
+        credentialPanel.addView(cancelButton)
+
         val title = TextView(this).apply {
-            text = "AgentX"
+            text = "DailyDay"
             textSize = 28f
             setTextColor(Color.BLACK)
         }
         val subtitle = TextView(this).apply {
-            text = "Agent S-inspired task planner and browser executor"
+            text = "DailyDay autonomous agent"
             setTextColor(Color.DKGRAY)
             setPadding(0, 4, 0, 20)
         }
@@ -69,6 +111,7 @@ class MainActivity : AppCompatActivity() {
             addView(input)
             addView(run)
             addView(status)
+            addView(credentialPanel)
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -85,6 +128,14 @@ class MainActivity : AppCompatActivity() {
                     results.visibility = View.VISIBLE
                     results.loadUrl(url)
                 }
+                state.credentialRequest?.let { request ->
+                    credentialPanel.visibility = View.VISIBLE
+                    credentialTitle.text = "Sign in to ${request.appLabel}"
+                    credentialReason.text = request.reason
+                } ?: run {
+                    credentialPanel.visibility = View.GONE
+                    password.text?.clear()
+                }
             }
         }
 
@@ -96,6 +147,13 @@ class MainActivity : AppCompatActivity() {
                 viewModel.run(prompt)
             }
         }
+        continueButton.setOnClickListener {
+            viewModel.continueWithCredentials(
+                username = username.text.toString(),
+                password = password.text.toString()
+            )
+        }
+        cancelButton.setOnClickListener { viewModel.cancelCredentialRequest() }
     }
 
     override fun onBackPressed() {

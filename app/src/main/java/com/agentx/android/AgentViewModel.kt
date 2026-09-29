@@ -1,6 +1,7 @@
 package com.agentx.android
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.agentx.android.data.AgentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -8,16 +9,28 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class CredentialRequest(
+    val appLabel: String,
+    val reason: String
+)
+
 data class AgentUiState(
     val running: Boolean = false,
     val message: String = "Ready",
     val searchUrl: String? = null,
-    val query: String? = null
+    val query: String? = null,
+    val credentialRequest: CredentialRequest? = null,
+    val installedApp: InstalledApp? = null
 )
 
-class AgentViewModel(private val repository: AgentRepository = AgentRepository()) : ViewModel() {
+class AgentViewModel(
+    application: Application,
+    private val repository: AgentRepository = AgentRepository()
+) : AndroidViewModel(application) {
+    private val executor = AppTaskExecutor(application)
     private val _state = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = _state.asStateFlow()
+    private var pendingPlan: TaskPlan? = null
 
     fun run(instruction: String) {
         val plan = try {
@@ -30,20 +43,66 @@ class AgentViewModel(private val repository: AgentRepository = AgentRepository()
         when (plan.kind) {
             TaskKind.WEB_SEARCH -> {
                 _state.value = AgentUiState(
-                    running = false,
                     message = "Search ready: ${plan.query}",
                     searchUrl = plan.url,
                     query = plan.query
                 )
             }
 
+            TaskKind.APP_TASK -> {
+                if (plan.requiresCredentials) {
+                    pendingPlan = plan
+                    _state.value = AgentUiState(
+                        message = "Credentials needed before continuing",
+                        query = plan.query,
+                        credentialRequest = CredentialRequest(
+                            appLabel = plan.requestedApp ?: "the requested app",
+                            reason = plan.credentialReason ?: "Provide credentials for this run."
+                        )
+                    )
+                } else {
+                    executeAppTask(plan)
+                }
+            }
+
             TaskKind.BACKEND_RUN -> runBackend(plan.instruction)
         }
     }
 
+    fun continueWithCredentials(username: String, password: String) {
+        val plan = pendingPlan ?: return
+        if (username.isBlank() || password.isBlank()) {
+            _state.value = _state.value.copy(message = "Enter both fields to continue")
+            return
+        }
+        // Credentials remain in this call only. They are never logged, persisted,
+        // sent to the backend, or injected into another app automatically.
+        pendingPlan = null
+        executeAppTask(plan, credentialsProvided = true)
+    }
+
+    fun cancelCredentialRequest() {
+        pendingPlan = null
+        _state.value = AgentUiState(message = "Credential request cancelled")
+    }
+
+    private fun executeAppTask(plan: TaskPlan, credentialsProvided: Boolean = false) {
+        val result = executor.execute(plan)
+        _state.value = AgentUiState(
+            message = if (credentialsProvided) {
+                "Credentials received for this run. ${result.message}"
+            } else {
+                result.message
+            },
+            searchUrl = result.fallbackUrl,
+            query = plan.query,
+            installedApp = result.installed
+        )
+    }
+
     private fun runBackend(instruction: String) {
         viewModelScope.launch {
-            _state.value = AgentUiState(true, "Sending task to Agent X backend…")
+            _state.value = AgentUiState(true, "Sending task to DailyDay backend…")
             _state.value = try {
                 val result = repository.startRun(instruction)
                 AgentUiState(false, "Run ${result.id}: ${result.status}")
