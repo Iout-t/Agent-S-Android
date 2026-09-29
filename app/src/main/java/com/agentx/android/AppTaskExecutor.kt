@@ -8,6 +8,9 @@ import android.app.SearchManager
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+internal fun spotifyContentUrl(query: String): String =
+    "https://open.spotify.com/search/${Uri.encode(query)}"
+
 data class InstalledApp(
     val label: String,
     val packageName: String
@@ -97,7 +100,7 @@ class AppTaskExecutor(context: Context) {
         if (plan.query != null && installed.packageName == "com.spotify.music") {
             return Intent(
                 Intent.ACTION_VIEW,
-                Uri.parse("spotify:search:${encode(plan.query)}")
+                Uri.parse(spotifyContentUrl(plan.query))
             ).setPackage(installed.packageName)
         }
         if (plan.query != null && installed.packageName == "com.google.android.apps.maps") {
@@ -121,4 +124,5 @@ class AppTaskExecutor(context: Context) {
 
     private fun encode(value: String): String =
         URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+
 }

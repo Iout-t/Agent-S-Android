@@ -125,9 +125,25 @@ class MainActivity : AppCompatActivity() {
             id = R.id.save_call_settings
             text = "Save call settings"
         }
+        val callHelp = TextView(this).apply {
+            text = "When enabled, DailyDay can answer an incoming call and speak your instruction. Android will ask for phone permissions before this can work."
+            setTextColor(Color.DKGRAY)
+            setPadding(0, 4, 0, 8)
+        }
         val callPreferences = getSharedPreferences(IncomingCallReceiver.PREFERENCES, MODE_PRIVATE)
         callInstruction.setText(callPreferences.getString(IncomingCallReceiver.KEY_INSTRUCTION, ""))
         autoAnswer.isChecked = callPreferences.getBoolean(IncomingCallReceiver.KEY_AUTO_ANSWER, false)
+
+        val callSection = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
+            setBackgroundColor(Color.rgb(240, 244, 248))
+            addView(callHeading)
+            addView(callHelp)
+            addView(callInstruction)
+            addView(autoAnswer)
+            addView(saveCallSettings)
+        }
 
         val title = TextView(this).apply {
             text = "DailyDay"
@@ -149,10 +165,7 @@ class MainActivity : AppCompatActivity() {
             addView(assistantButton)
             addView(status)
             addView(credentialPanel)
-            addView(callHeading)
-            addView(callInstruction)
-            addView(autoAnswer)
-            addView(saveCallSettings)
+            addView(callSection)
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
