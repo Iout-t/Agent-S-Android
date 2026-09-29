@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.SearchManager
+import android.app.SearchManager
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
