@@ -27,8 +27,12 @@ object TaskPlanner {
         "^(?:please\\s+)?(?:open|launch|use)\\s+(.+?)\\s+(?:and\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+)$",
         RegexOption.IGNORE_CASE
     )
-    private val appNamePattern = Regex(
-        "^(?:please\\s+)?(?:open|launch|use)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*?)(?:\\s+and\\s+|\\s+to\\s+|$).*$",
+    private val appActionPattern = Regex(
+        "^(?:please\\s+)?(?:open|launch|use)\\s+(.+?)\\s+and\\s+(.+)$",
+        RegexOption.IGNORE_CASE
+    )
+    private val appOnlyPattern = Regex(
+        "^(?:please\\s+)?(?:open|launch|use)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*)$",
         RegexOption.IGNORE_CASE
     )
     private val searchPrefix = Regex(
@@ -42,7 +46,15 @@ object TaskPlanner {
         "maps" to "com.google.android.apps.maps",
         "google maps" to "com.google.android.apps.maps",
         "gmail" to "com.google.android.gm",
-        "spotify" to "com.spotify.music"
+        "spotify" to "com.spotify.music",
+        "whatsapp" to "com.whatsapp",
+        "telegram" to "org.telegram.messenger",
+        "instagram" to "com.instagram.android",
+        "facebook" to "com.facebook.katana",
+        "netflix" to "com.netflix.mediaclient",
+        "amazon" to "com.amazon.mShop.android.shopping",
+        "slack" to "com.Slack",
+        "zoom" to "us.zoom.videomeetings"
     )
 
     fun plan(instruction: String): TaskPlan {
@@ -52,14 +64,18 @@ object TaskPlanner {
         appSearchPattern.matchEntire(cleanInstruction)?.let { match ->
             val app = match.groupValues[1].trim()
             val query = match.groupValues[2].trim()
-            return appTask(cleanInstruction, app, query)
+            return appTask(cleanInstruction, app, query, "search for $query")
         }
 
-        appNamePattern.matchEntire(cleanInstruction)?.let { match ->
+        appActionPattern.matchEntire(cleanInstruction)?.let { match ->
             val app = match.groupValues[1].trim()
-            if (knownPackages.keys.any { app.equals(it, ignoreCase = true) }) {
-                return appTask(cleanInstruction, app, null)
-            }
+            val action = match.groupValues[2].trim()
+            return appTask(cleanInstruction, app, null, action)
+        }
+
+        appOnlyPattern.matchEntire(cleanInstruction)?.let { match ->
+            val app = match.groupValues[1].trim()
+            return appTask(cleanInstruction, app, null, "open $app")
         }
 
         val lowered = cleanInstruction.lowercase()
@@ -89,7 +105,7 @@ object TaskPlanner {
         )
     }
 
-    private fun appTask(instruction: String, app: String, query: String?): TaskPlan {
+    private fun appTask(instruction: String, app: String, query: String?, action: String): TaskPlan {
         val credentialReason = credentialReason(instruction)
         return TaskPlan(
             kind = TaskKind.APP_TASK,
@@ -97,10 +113,10 @@ object TaskPlanner {
             query = query,
             requestedApp = app,
             preferredPackage = knownPackages[app.lowercase()],
-            actionDescription = if (query == null) "Open $app" else "Open $app and search for $query",
+            actionDescription = action,
             requiresCredentials = credentialReason != null,
             credentialReason = credentialReason,
-            summary = if (query == null) "App task ready for $app" else "App task ready: $app → $query"
+            summary = if (query == null) "App task ready: $app → $action" else "App task ready: $app → $query"
         )
     }
 

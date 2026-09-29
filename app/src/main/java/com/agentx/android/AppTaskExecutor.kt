@@ -69,7 +69,7 @@ class AppTaskExecutor(context: Context) {
                 launched = true,
                 installed = installed,
                 fallbackUrl = null,
-                message = "Opened ${installed.label}${plan.query?.let { " and searched for $it" }.orEmpty()}"
+                message = "Opened ${installed.label}: ${plan.actionDescription}"
             )
         } catch (error: Exception) {
             AppExecutionResult(
@@ -86,6 +86,18 @@ class AppTaskExecutor(context: Context) {
             return Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse("https://www.youtube.com/results?search_query=${encode(plan.query)}")
+            ).setPackage(installed.packageName)
+        }
+        if (plan.query != null && installed.packageName == "com.spotify.music") {
+            return Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("spotify:search:${encode(plan.query)}")
+            ).setPackage(installed.packageName)
+        }
+        if (plan.query != null && installed.packageName == "com.google.android.apps.maps") {
+            return Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("geo:0,0?q=${encode(plan.query)}")
             ).setPackage(installed.packageName)
         }
 

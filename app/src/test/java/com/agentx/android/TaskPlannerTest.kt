@@ -27,6 +27,25 @@ class TaskPlannerTest {
     }
 
     @Test
+    fun otherInstalledAppRequestsUseTheSameRoutingPath() {
+        val plan = TaskPlanner.plan("Launch Spotify and search for ambient focus music")
+
+        assertEquals(TaskKind.APP_TASK, plan.kind)
+        assertEquals("Spotify", plan.requestedApp)
+        assertEquals("com.spotify.music", plan.preferredPackage)
+        assertEquals("ambient focus music", plan.query)
+    }
+
+    @Test
+    fun unknownLauncherAppsAreStillRecognizedByName() {
+        val plan = TaskPlanner.plan("Open My Notes and create a new note")
+
+        assertEquals(TaskKind.APP_TASK, plan.kind)
+        assertEquals("My Notes", plan.requestedApp)
+        assertEquals(null, plan.preferredPackage)
+    }
+
+    @Test
     fun signInInstructionRequestsEphemeralCredentials() {
         val plan = TaskPlanner.plan("Open YouTube and sign in with my username and password")
 
@@ -37,7 +56,7 @@ class TaskPlannerTest {
 
     @Test
     fun ordinaryInstructionDelegatesToBackend() {
-        val plan = TaskPlanner.plan("Open the settings app and enable dark mode")
+        val plan = TaskPlanner.plan("Enable dark mode across the phone")
 
         assertEquals(TaskKind.BACKEND_RUN, plan.kind)
         assertEquals(null, plan.url)
