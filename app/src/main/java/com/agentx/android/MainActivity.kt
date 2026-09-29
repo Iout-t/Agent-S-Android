@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -106,7 +107,7 @@ class MainActivity : AppCompatActivity() {
         credentialPanel.addView(cancelButton)
 
         val callHeading = TextView(this).apply {
-            text = "Incoming calls"
+            text = "Incoming call automation"
             textSize = 20f
             setTextColor(Color.BLACK)
             setPadding(0, 24, 0, 4)
@@ -169,7 +170,14 @@ class MainActivity : AppCompatActivity() {
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            addView(controls)
+            addView(ScrollView(this@MainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f
+                )
+                addView(controls)
+            })
             addView(results)
         }
         setContentView(root)
