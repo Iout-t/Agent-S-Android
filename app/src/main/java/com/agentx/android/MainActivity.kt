@@ -124,8 +124,8 @@ class MainActivity : AppCompatActivity() {
             viewModel.state.collect { state ->
                 status.text = state.message
                 run.isEnabled = !state.running
+                results.visibility = if (state.searchUrl == null) View.GONE else View.VISIBLE
                 state.searchUrl?.let { url ->
-                    results.visibility = View.VISIBLE
                     results.loadUrl(url)
                 }
                 state.credentialRequest?.let { request ->
