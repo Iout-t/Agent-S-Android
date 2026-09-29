@@ -23,10 +23,8 @@ data class AgentUiState(
     val installedApp: InstalledApp? = null
 )
 
-class AgentViewModel(
-    application: Application,
-    private val repository: AgentRepository = AgentRepository()
-) : AndroidViewModel(application) {
+class AgentViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = AgentRepository()
     private val executor = AppTaskExecutor(application)
     private val _state = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = _state.asStateFlow()
