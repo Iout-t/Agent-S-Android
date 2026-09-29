@@ -1,12 +1,15 @@
 package com.agentx.android
-
+import android.Manifest
+import android.app.role.RoleManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -31,6 +34,10 @@ class MainActivity : AppCompatActivity() {
         val run = Button(this).apply {
             id = R.id.run_button
             text = "Run task"
+        }
+        val assistantButton = Button(this).apply {
+            id = R.id.assistant_button
+            text = "Set DailyDay as default assistant"
         }
         val status = TextView(this).apply {
             id = R.id.status_text
@@ -78,6 +85,10 @@ class MainActivity : AppCompatActivity() {
             hint = "Password"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
+        val saveCredentials = CheckBox(this).apply {
+            id = R.id.save_credentials
+            text = "Save encrypted credentials for this app on this phone"
+        }
         val continueButton = Button(this).apply {
             id = R.id.continue_button
             text = "Continue securely"
@@ -90,8 +101,33 @@ class MainActivity : AppCompatActivity() {
         credentialPanel.addView(credentialReason)
         credentialPanel.addView(username)
         credentialPanel.addView(password)
+        credentialPanel.addView(saveCredentials)
         credentialPanel.addView(continueButton)
         credentialPanel.addView(cancelButton)
+
+        val callHeading = TextView(this).apply {
+            text = "Incoming calls"
+            textSize = 20f
+            setTextColor(Color.BLACK)
+            setPadding(0, 24, 0, 4)
+        }
+        val callInstruction = EditText(this).apply {
+            id = R.id.call_instruction_input
+            hint = "What DailyDay should say after answering"
+            setSingleLine(false)
+            minLines = 2
+        }
+        val autoAnswer = CheckBox(this).apply {
+            id = R.id.auto_answer_calls
+            text = "Enable automatic answer and speak this instruction"
+        }
+        val saveCallSettings = Button(this).apply {
+            id = R.id.save_call_settings
+            text = "Save call settings"
+        }
+        val callPreferences = getSharedPreferences(IncomingCallReceiver.PREFERENCES, MODE_PRIVATE)
+        callInstruction.setText(callPreferences.getString(IncomingCallReceiver.KEY_INSTRUCTION, ""))
+        autoAnswer.isChecked = callPreferences.getBoolean(IncomingCallReceiver.KEY_AUTO_ANSWER, false)
 
         val title = TextView(this).apply {
             text = "DailyDay"
@@ -110,8 +146,13 @@ class MainActivity : AppCompatActivity() {
             addView(subtitle)
             addView(input)
             addView(run)
+            addView(assistantButton)
             addView(status)
             addView(credentialPanel)
+            addView(callHeading)
+            addView(callInstruction)
+            addView(autoAnswer)
+            addView(saveCallSettings)
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -131,11 +172,16 @@ class MainActivity : AppCompatActivity() {
                 state.credentialRequest?.let { request ->
                     credentialPanel.visibility = View.VISIBLE
                     credentialTitle.text = "Sign in to ${request.appLabel}"
-                    credentialReason.text = request.reason
+                    credentialReason.text = if (request.savedAvailable) {
+                        "Encrypted credentials are available for this app. ${request.reason}"
+                    } else {
+                        request.reason
+                    }
                 } ?: run {
                     credentialPanel.visibility = View.GONE
                     username.text?.clear()
                     password.text?.clear()
+                    saveCredentials.isChecked = false
                 }
             }
         }
@@ -151,10 +197,41 @@ class MainActivity : AppCompatActivity() {
         continueButton.setOnClickListener {
             viewModel.continueWithCredentials(
                 username = username.text.toString(),
-                password = password.text.toString()
+                password = password.text.toString(),
+                saveForFuture = saveCredentials.isChecked
             )
         }
         cancelButton.setOnClickListener { viewModel.cancelCredentialRequest() }
+        assistantButton.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val roleManager = getSystemService(RoleManager::class.java)
+                when {
+                    roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT) ->
+                        Snackbar.make(root, "This Android build does not expose the assistant role", Snackbar.LENGTH_LONG).show()
+                    roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT) ->
+                        Snackbar.make(root, "DailyDay is already the default assistant", Snackbar.LENGTH_SHORT).show()
+                    else -> startActivityForResult(
+                        roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),
+                        ASSISTANT_ROLE_REQUEST
+                    )
+                }
+            } else {
+                Snackbar.make(root, "Default assistant selection requires Android 10 or newer", Snackbar.LENGTH_LONG).show()
+            }
+        }
+        saveCallSettings.setOnClickListener {
+            if (autoAnswer.isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.ANSWER_PHONE_CALLS),
+                    CALL_PERMISSION_REQUEST
+                )
+            }
+            callPreferences.edit()
+                .putString(IncomingCallReceiver.KEY_INSTRUCTION, callInstruction.text.toString().trim())
+                .putBoolean(IncomingCallReceiver.KEY_AUTO_ANSWER, autoAnswer.isChecked)
+                .apply()
+            Snackbar.make(root, "Incoming-call settings saved", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     override fun onBackPressed() {
@@ -164,5 +241,10 @@ class MainActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    private companion object {
+        const val ASSISTANT_ROLE_REQUEST = 4101
+        const val CALL_PERMISSION_REQUEST = 4102
     }
 }

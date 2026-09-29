@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 
 enum class TaskKind {
     APP_TASK,
+    FORM_TASK,
     WEB_SEARCH,
     BACKEND_RUN
 }
@@ -23,12 +24,20 @@ data class TaskPlan(
 )
 
 object TaskPlanner {
+    private val googleFormLinkPattern = Regex(
+        "https?://(?:docs\\.google\\.com/forms|forms\\.gle)[^\\s]+",
+        RegexOption.IGNORE_CASE
+    )
     private val appSearchPattern = Regex(
         "^(?:please\\s+)?(?:open|launch|use|go\\s+to|visit)\\s+(.+?)\\s+(?:and\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+)$",
         RegexOption.IGNORE_CASE
     )
     private val searchInAppPattern = Regex(
         "^(?:please\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+?)\\s+(?:on|in)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*)$",
+        RegexOption.IGNORE_CASE
+    )
+    private val appPlayPattern = Regex(
+        "^(?:please\\s+)?(?:open|launch|use|go\\s+to|visit)\\s+(.+?)\\s+(?:and\\s+)?play\\s+(.+)$",
         RegexOption.IGNORE_CASE
     )
     private val appActionPattern = Regex(
@@ -65,10 +74,32 @@ object TaskPlanner {
         val cleanInstruction = instruction.trim().replace(Regex("\\s+"), " ")
         require(cleanInstruction.isNotEmpty()) { "Instruction cannot be empty" }
 
+        googleFormLinkPattern.find(cleanInstruction)?.value?.let { rawLink ->
+            val link = rawLink.trimEnd('.', ',', ')', ']')
+            return TaskPlan(
+                kind = TaskKind.FORM_TASK,
+                instruction = cleanInstruction,
+                url = link,
+                actionDescription = "open the Google Form",
+                summary = "Google Form ready for guided completion"
+            )
+        }
+
         searchInAppPattern.matchEntire(cleanInstruction)?.let { match ->
             val query = match.groupValues[1].trim()
             val app = match.groupValues[2].trim()
             return appTask(cleanInstruction, app, query, "search for $query")
+        }
+
+        appPlayPattern.matchEntire(cleanInstruction)?.let { match ->
+            val app = match.groupValues[1].trim()
+            val query = match.groupValues[2]
+                .trim()
+                .replace("'", "")
+                .replace("\"", "")
+                .removeSuffix(".")
+                .trim()
+            return appTask(cleanInstruction, app, query, "play $query")
         }
 
         appSearchPattern.matchEntire(cleanInstruction)?.let { match ->

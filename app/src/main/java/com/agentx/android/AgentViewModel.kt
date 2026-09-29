@@ -11,7 +11,8 @@ import kotlinx.coroutines.launch
 
 data class CredentialRequest(
     val appLabel: String,
-    val reason: String
+    val reason: String,
+    val savedAvailable: Boolean = false
 )
 
 data class AgentUiState(
@@ -25,6 +26,7 @@ data class AgentUiState(
 
 class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AgentRepository()
+    private val credentialStore = CredentialStore(application)
     private val executor = AppTaskExecutor(application)
     private val _state = MutableStateFlow(AgentUiState())
     val state: StateFlow<AgentUiState> = _state.asStateFlow()
@@ -47,19 +49,29 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
+            TaskKind.FORM_TASK -> {
+                _state.value = AgentUiState(
+                    message = "Google Form opened. Review answers before submitting.",
+                    searchUrl = plan.url,
+                    query = plan.instruction
+                )
+            }
+
             TaskKind.APP_TASK -> {
-                if (plan.requiresCredentials) {
+                val savedAvailable = plan.requestedApp?.let(credentialStore::has) == true
+                if (plan.requiresCredentials && !savedAvailable) {
                     pendingPlan = plan
                     _state.value = AgentUiState(
                         message = "Credentials needed before continuing",
                         query = plan.query,
                         credentialRequest = CredentialRequest(
                             appLabel = plan.requestedApp ?: "the requested app",
-                            reason = plan.credentialReason ?: "Provide credentials for this run."
+                            reason = plan.credentialReason ?: "Provide credentials for this run.",
+                            savedAvailable = false
                         )
                     )
                 } else {
-                    executeAppTask(plan)
+                    executeAppTask(plan, credentialsProvided = savedAvailable)
                 }
             }
 
@@ -67,14 +79,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun continueWithCredentials(username: String, password: String) {
+    fun continueWithCredentials(username: String, password: String, saveForFuture: Boolean) {
         val plan = pendingPlan ?: return
         if (username.isBlank() || password.isBlank()) {
             _state.value = _state.value.copy(message = "Enter both fields to continue")
             return
         }
-        // Credentials remain in this call only. They are never logged, persisted,
-        // sent to the backend, or injected into another app automatically.
+        if (saveForFuture) {
+            plan.requestedApp?.let { credentialStore.save(it, username, password) }
+        }
         pendingPlan = null
         executeAppTask(plan, credentialsProvided = true)
     }
@@ -88,7 +101,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val result = executor.execute(plan)
         _state.value = AgentUiState(
             message = if (credentialsProvided) {
-                "Credentials received for this run. ${result.message}"
+                if (credentialStore.has(plan.requestedApp.orEmpty())) {
+                    "Using encrypted saved credentials for this run. ${result.message}"
+                } else {
+                    "Credentials received for this run. ${result.message}"
+                }
             } else {
                 result.message
             },

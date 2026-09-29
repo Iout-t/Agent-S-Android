@@ -8,6 +8,11 @@
     <item name="credential_reason" type="id" />
     <item name="username_input" type="id" />
     <item name="password_input" type="id" />
+    <item name="save_credentials" type="id" />
     <item name="continue_button" type="id" />
     <item name="cancel_button" type="id" />
+    <item name="assistant_button" type="id" />
+    <item name="call_instruction_input" type="id" />
+    <item name="auto_answer_calls" type="id" />
+    <item name="save_call_settings" type="id" />
 </resources>
