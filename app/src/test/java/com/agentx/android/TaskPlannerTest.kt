@@ -37,6 +37,26 @@ class TaskPlannerTest {
     }
 
     @Test
+    fun spotifyPlayInstructionKeepsOnlySongAndArtistInQuery() {
+        val plan = TaskPlanner.plan("Open Spotify and play 'Alone' by Marshmello.")
+
+        assertEquals(TaskKind.APP_TASK, plan.kind)
+        assertEquals("Spotify", plan.requestedApp)
+        assertEquals("Alone by Marshmello", plan.query)
+        assertEquals("play Alone by Marshmello", plan.actionDescription)
+    }
+
+    @Test
+    fun googleFormLinkOpensAsGuidedFormTask() {
+        val plan = TaskPlanner.plan(
+            "Open this form https://docs.google.com/forms/d/e/example/viewform and continue"
+        )
+
+        assertEquals(TaskKind.FORM_TASK, plan.kind)
+        assertEquals("https://docs.google.com/forms/d/e/example/viewform", plan.url)
+    }
+
+    @Test
     fun missingYouTubeFallbackStaysOnYouTube() {
         assertEquals(
             "https://www.youtube.com/results?search_query=bass+booster+songs",
