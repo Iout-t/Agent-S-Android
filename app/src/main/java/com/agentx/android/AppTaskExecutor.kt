@@ -99,11 +99,11 @@ class AppTaskExecutor(context: Context) {
             ).setPackage(installed.packageName)
         }
         if (plan.query != null && installed.packageName == "com.spotify.music") {
-            return Intent(
-                Intent.ACTION_MEDIA_PLAY_FROM_SEARCH
-            ).setPackage(installed.packageName)
-                .putExtra(SearchManager.QUERY, plan.query)
-                .putExtra(MediaStore.EXTRA_MEDIA_FOCUS, MediaStore.Audio.Media.ENTRY_CONTENT_TYPE)
+            return Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH).apply {
+                setPackage(installed.packageName)
+                putExtra(SearchManager.QUERY, plan.query)
+                putExtra(MediaStore.EXTRA_MEDIA_FOCUS, MediaStore.Audio.Media.ENTRY_CONTENT_TYPE)
+            }
         }
         if (plan.query != null && installed.packageName == "com.google.android.apps.maps") {
             return Intent(
