@@ -134,6 +134,7 @@ class MainActivity : AppCompatActivity() {
                     credentialReason.text = request.reason
                 } ?: run {
                     credentialPanel.visibility = View.GONE
+                    username.text?.clear()
                     password.text?.clear()
                 }
             }

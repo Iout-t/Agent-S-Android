@@ -5,6 +5,19 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.android.chrome" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.whatsapp" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.mShop.android.shopping" />
+        <package android:name="com.Slack" />
+        <package android:name="us.zoom.videomeetings" />
     </queries>
     <application android:theme="@style/Theme.AgentX" android:label="DailyDay" android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">

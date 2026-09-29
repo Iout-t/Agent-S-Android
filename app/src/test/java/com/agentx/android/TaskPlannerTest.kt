@@ -27,6 +27,24 @@ class TaskPlannerTest {
     }
 
     @Test
+    fun searchOnAppInstructionRoutesToNamedApp() {
+        val plan = TaskPlanner.plan("Search for bass booster songs on YouTube")
+
+        assertEquals(TaskKind.APP_TASK, plan.kind)
+        assertEquals("YouTube", plan.requestedApp)
+        assertEquals("bass booster songs", plan.query)
+        assertEquals("com.google.android.youtube", plan.preferredPackage)
+    }
+
+    @Test
+    fun missingYouTubeFallbackStaysOnYouTube() {
+        assertEquals(
+            "https://www.youtube.com/results?search_query=bass+booster+songs",
+            TaskPlanner.appWebUrl("YouTube", "bass booster songs")
+        )
+    }
+
+    @Test
     fun otherInstalledAppRequestsUseTheSameRoutingPath() {
         val plan = TaskPlanner.plan("Launch Spotify and search for ambient focus music")
 

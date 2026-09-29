@@ -24,15 +24,19 @@ data class TaskPlan(
 
 object TaskPlanner {
     private val appSearchPattern = Regex(
-        "^(?:please\\s+)?(?:open|launch|use)\\s+(.+?)\\s+(?:and\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+)$",
+        "^(?:please\\s+)?(?:open|launch|use|go\\s+to|visit)\\s+(.+?)\\s+(?:and\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+)$",
+        RegexOption.IGNORE_CASE
+    )
+    private val searchInAppPattern = Regex(
+        "^(?:please\\s+)?(?:search|find|look\\s+up)\\s+(?:for\\s+)?(.+?)\\s+(?:on|in)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*)$",
         RegexOption.IGNORE_CASE
     )
     private val appActionPattern = Regex(
-        "^(?:please\\s+)?(?:open|launch|use)\\s+(.+?)\\s+and\\s+(.+)$",
+        "^(?:please\\s+)?(?:open|launch|use|go\\s+to|visit)\\s+(.+?)\\s+and\\s+(.+)$",
         RegexOption.IGNORE_CASE
     )
     private val appOnlyPattern = Regex(
-        "^(?:please\\s+)?(?:open|launch|use)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*)$",
+        "^(?:please\\s+)?(?:open|launch|use|go\\s+to|visit)\\s+([A-Za-z0-9][A-Za-z0-9 ._-]*)$",
         RegexOption.IGNORE_CASE
     )
     private val searchPrefix = Regex(
@@ -60,6 +64,12 @@ object TaskPlanner {
     fun plan(instruction: String): TaskPlan {
         val cleanInstruction = instruction.trim().replace(Regex("\\s+"), " ")
         require(cleanInstruction.isNotEmpty()) { "Instruction cannot be empty" }
+
+        searchInAppPattern.matchEntire(cleanInstruction)?.let { match ->
+            val query = match.groupValues[1].trim()
+            val app = match.groupValues[2].trim()
+            return appTask(cleanInstruction, app, query, "search for $query")
+        }
 
         appSearchPattern.matchEntire(cleanInstruction)?.let { match ->
             val app = match.groupValues[1].trim()
@@ -132,5 +142,16 @@ object TaskPlanner {
     fun googleUrl(query: String): String {
         val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
         return "https://www.google.com/search?q=$encodedQuery"
+    }
+
+    fun appWebUrl(app: String?, query: String): String? {
+        val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
+        return when (app?.lowercase()) {
+            "youtube" -> "https://www.youtube.com/results?search_query=$encodedQuery"
+            "spotify" -> "https://open.spotify.com/search/$encodedQuery"
+            "maps", "google maps" -> "https://www.google.com/maps/search/?api=1&query=$encodedQuery"
+            "amazon" -> "https://www.amazon.com/s?k=$encodedQuery"
+            else -> null
+        }
     }
 }

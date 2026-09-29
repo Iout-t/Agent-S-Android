@@ -25,6 +25,17 @@ class AppTaskExecutor(context: Context) {
     private val packageManager = appContext.packageManager
 
     fun findCompatibleApp(requestedApp: String?, preferredPackage: String?): InstalledApp? {
+        preferredPackage?.let { packageName ->
+            try {
+                val appInfo = packageManager.getApplicationInfo(packageName, 0)
+                return InstalledApp(
+                    label = appInfo.loadLabel(packageManager).toString(),
+                    packageName = packageName
+                )
+            } catch (_: PackageManager.NameNotFoundException) {
+                // Continue with launcher-label matching for aliases and user-installed apps.
+            }
+        }
         val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val candidates = packageManager.queryIntentActivities(
             launchIntent,
@@ -47,18 +58,13 @@ class AppTaskExecutor(context: Context) {
 
     fun execute(plan: TaskPlan): AppExecutionResult {
         val installed = findCompatibleApp(plan.requestedApp, plan.preferredPackage)
-        val fallbackUrl = plan.query?.let { query ->
-            when (plan.requestedApp?.lowercase()) {
-                "youtube" -> "https://www.youtube.com/results?search_query=${encode(query)}"
-                else -> TaskPlanner.googleUrl("${plan.requestedApp.orEmpty()} $query")
-            }
-        }
+        val fallbackUrl = plan.query?.let { query -> TaskPlanner.appWebUrl(plan.requestedApp, query) }
 
         if (installed == null) {
             return AppExecutionResult(
                 launched = false,
                 fallbackUrl = fallbackUrl,
-                message = "${plan.requestedApp ?: "Requested app"} is not installed. Offering a web fallback."
+                message = "${plan.requestedApp ?: "Requested app"} is not installed. No compatible app was found."
             )
         }
 
@@ -76,7 +82,7 @@ class AppTaskExecutor(context: Context) {
                 launched = false,
                 installed = installed,
                 fallbackUrl = fallbackUrl,
-                message = "Could not open ${installed.label}; offering a web fallback."
+                message = "Could not complete the task in ${installed.label}. The app is installed, but it does not expose a compatible action."
             )
         }
     }
@@ -102,10 +108,11 @@ class AppTaskExecutor(context: Context) {
         }
 
         if (plan.query != null) {
-            return Intent(Intent.ACTION_SEARCH).apply {
+            val searchIntent = Intent(Intent.ACTION_SEARCH).apply {
                 setPackage(installed.packageName)
                 putExtra(SearchManager.QUERY, plan.query)
             }
+            if (searchIntent.resolveActivity(packageManager) != null) return searchIntent
         }
 
         return packageManager.getLaunchIntentForPackage(installed.packageName)
