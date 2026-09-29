@@ -21,7 +21,7 @@
         <package android:name="com.Slack" />
         <package android:name="us.zoom.videomeetings" />
     </queries>
-    <application android:theme="@style/Theme.AgentX" android:label="DailyDay" android:usesCleartextTraffic="true">
+    <application android:theme="@style/Theme.AgentX" android:label="Agent X" android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         }
         val assistantButton = Button(this).apply {
             id = R.id.assistant_button
-            text = "Set DailyDay as default assistant"
+            text = "Set Agent X as default assistant"
         }
         val status = TextView(this).apply {
             id = R.id.status_text
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
         }
         val callInstruction = EditText(this).apply {
             id = R.id.call_instruction_input
-            hint = "What DailyDay should say after answering"
+            hint = "What Agent X should say after answering"
             setSingleLine(false)
             minLines = 2
         }
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
             text = "Save call settings"
         }
         val callHelp = TextView(this).apply {
-            text = "When enabled, DailyDay can answer an incoming call and speak your instruction. Android will ask for phone permissions before this can work."
+            text = "When enabled, Agent X can answer an incoming call and speak your instruction. Android will ask for phone permissions before this can work."
             setTextColor(Color.DKGRAY)
             setPadding(0, 4, 0, 8)
         }
@@ -146,12 +146,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         val title = TextView(this).apply {
-            text = "DailyDay"
+            text = "Agent X"
             textSize = 28f
             setTextColor(Color.BLACK)
         }
         val subtitle = TextView(this).apply {
-            text = "DailyDay autonomous agent"
+            text = "Agent X autonomous agent"
             setTextColor(Color.DKGRAY)
             setPadding(0, 4, 0, 20)
         }
@@ -222,7 +222,7 @@ class MainActivity : AppCompatActivity() {
                     roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_ASSISTANT) ->
                         Snackbar.make(root, "This Android build does not expose the assistant role", Snackbar.LENGTH_LONG).show()
                     roleManager.isRoleHeld(RoleManager.ROLE_ASSISTANT) ->
-                        Snackbar.make(root, "DailyDay is already the default assistant", Snackbar.LENGTH_SHORT).show()
+                        Snackbar.make(root, "Agent X is already the default assistant", Snackbar.LENGTH_SHORT).show()
                     else -> startActivityForResult(
                         roleManager.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT),
                         ASSISTANT_ROLE_REQUEST

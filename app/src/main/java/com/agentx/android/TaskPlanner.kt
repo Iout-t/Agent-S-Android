@@ -154,7 +154,7 @@ object TaskPlanner {
         return TaskPlan(
             kind = TaskKind.BACKEND_RUN,
             instruction = cleanInstruction,
-            summary = "Delegating this task to the DailyDay backend"
+            summary = "Delegating this task to the Agent X backend"
         )
     }
 
@@ -177,7 +177,7 @@ object TaskPlanner {
         val lowered = instruction.lowercase()
         return when {
             listOf("username", "password", "log in", "login", "sign in", "sign-in", "credentials")
-                .any(lowered::contains) -> "This task may require a sign-in. DailyDay will ask for credentials only for this run."
+                .any(lowered::contains) -> "This task may require a sign-in. Agent X will ask for credentials only for this run."
             else -> null
         }
     }

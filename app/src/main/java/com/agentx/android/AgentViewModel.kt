@@ -123,7 +123,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun runBackend(instruction: String) {
         viewModelScope.launch {
-            _state.value = AgentUiState(true, "Sending task to DailyDay backend…")
+            _state.value = AgentUiState(true, "Sending task to Agent X backend…")
             _state.value = try {
                 val result = repository.startRun(instruction)
                 AgentUiState(false, "Run ${result.id}: ${result.status}")
