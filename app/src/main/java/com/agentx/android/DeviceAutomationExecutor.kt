@@ -12,6 +12,22 @@ class DeviceAutomationExecutor(context: Context) {
     fun execute(plan: TaskPlan): AppExecutionResult {
         val action = plan.automationAction
             ?: return AppExecutionResult(false, message = "No device automation action was recognized.")
+        if (action == AutomationAction.UI_AUTOMATION) {
+            val service = DailyDayAccessibilityService.instance
+                ?: return AppExecutionResult(
+                    launched = false,
+                    message = "Enable Agent X in Android Accessibility settings before running tap, swipe, or text actions."
+                )
+            val executed = service.execute(plan.instruction)
+            return AppExecutionResult(
+                launched = executed,
+                message = if (executed) {
+                    "Accessibility action completed."
+                } else {
+                    "Accessibility could not find the requested target or action."
+                }
+            )
+        }
         val intent = settingsIntent(action)
         return try {
             if (action == AutomationAction.VOLUME) {
