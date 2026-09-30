@@ -27,6 +27,15 @@ class TaskPlannerTest {
     }
 
     @Test
+    fun youtubeSearchAndPlayKeepsOnlyTheSongQuery() {
+        val plan = TaskPlanner.plan("Open YouTube and search for 'Alone by Marshmello' and play it")
+
+        assertEquals("Alone by Marshmello", plan.query)
+        assertTrue(plan.playRequested)
+        assertEquals("search for Alone by Marshmello and play it", plan.actionDescription)
+    }
+
+    @Test
     fun searchOnAppInstructionRoutesToNamedApp() {
         val plan = TaskPlanner.plan("Search for bass booster songs on YouTube")
 
@@ -43,7 +52,16 @@ class TaskPlannerTest {
         assertEquals(TaskKind.APP_TASK, plan.kind)
         assertEquals("Spotify", plan.requestedApp)
         assertEquals("Alone by Marshmello", plan.query)
+        assertTrue(plan.playRequested)
         assertEquals("play Alone by Marshmello", plan.actionDescription)
+    }
+
+    @Test
+    fun spotifySearchAndPlayDoesNotPutPlayPhraseInSearchField() {
+        val plan = TaskPlanner.plan("Open Spotify and search for 'Alone by Marshmello' and play it")
+
+        assertEquals("Alone by Marshmello", plan.query)
+        assertTrue(plan.playRequested)
     }
 
     @Test

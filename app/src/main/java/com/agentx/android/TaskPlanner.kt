@@ -19,6 +19,7 @@ data class TaskPlan(
     val requestedApp: String? = null,
     val preferredPackage: String? = null,
     val actionDescription: String = instruction,
+    val playRequested: Boolean = false,
     val requiresCredentials: Boolean = false,
     val credentialReason: String? = null,
     val automationAction: AutomationAction? = null,
@@ -98,9 +99,10 @@ object TaskPlanner {
         }
 
         searchInAppPattern.matchEntire(cleanInstruction)?.let { match ->
-            val query = match.groupValues[1].trim()
+            val (query, playRequested) = cleanSearchQuery(match.groupValues[1])
             val app = match.groupValues[2].trim()
-            return appTask(cleanInstruction, app, query, "search for $query")
+            val action = if (playRequested) "search for $query and play it" else "search for $query"
+            return appTask(cleanInstruction, app, query, action, playRequested)
         }
 
         appPlayPattern.matchEntire(cleanInstruction)?.let { match ->
@@ -111,13 +113,14 @@ object TaskPlanner {
                 .replace("\"", "")
                 .removeSuffix(".")
                 .trim()
-            return appTask(cleanInstruction, app, query, "play $query")
+            return appTask(cleanInstruction, app, query, "play $query", playRequested = true)
         }
 
         appSearchPattern.matchEntire(cleanInstruction)?.let { match ->
             val app = match.groupValues[1].trim()
-            val query = match.groupValues[2].trim()
-            return appTask(cleanInstruction, app, query, "search for $query")
+            val (query, playRequested) = cleanSearchQuery(match.groupValues[2])
+            val action = if (playRequested) "search for $query and play it" else "search for $query"
+            return appTask(cleanInstruction, app, query, action, playRequested)
         }
 
         appActionPattern.matchEntire(cleanInstruction)?.let { match ->
@@ -158,7 +161,13 @@ object TaskPlanner {
         )
     }
 
-    private fun appTask(instruction: String, app: String, query: String?, action: String): TaskPlan {
+    private fun appTask(
+        instruction: String,
+        app: String,
+        query: String?,
+        action: String,
+        playRequested: Boolean = false
+    ): TaskPlan {
         val credentialReason = credentialReason(instruction)
         return TaskPlan(
             kind = TaskKind.APP_TASK,
@@ -167,10 +176,27 @@ object TaskPlanner {
             requestedApp = app,
             preferredPackage = knownPackages[app.lowercase()],
             actionDescription = action,
+            playRequested = playRequested,
             requiresCredentials = credentialReason != null,
             credentialReason = credentialReason,
             summary = if (query == null) "App task ready: $app → $action" else "App task ready: $app → $query"
         )
+    }
+
+    private fun cleanSearchQuery(rawQuery: String): Pair<String, Boolean> {
+        val normalized = rawQuery.trim()
+        val playSuffix = Regex(
+            "\\s+(?:and\\s+)?play\\s+(?:it|that|the song|the video)\\s*[.!?]?$",
+            RegexOption.IGNORE_CASE
+        )
+        val playRequested = playSuffix.containsMatchIn(normalized)
+        val query = normalized
+            .replace(playSuffix, "")
+            .trim()
+            .removeSurrounding("'")
+            .removeSurrounding("\"")
+            .trim()
+        return query to playRequested
     }
 
     fun credentialReason(instruction: String): String? {

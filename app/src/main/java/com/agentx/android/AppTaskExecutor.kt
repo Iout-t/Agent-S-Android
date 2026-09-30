@@ -92,18 +92,21 @@ class AppTaskExecutor(context: Context) {
     }
 
     private fun createIntent(plan: TaskPlan, installed: InstalledApp): Intent {
+        if (plan.query != null && plan.playRequested && installed.packageName == "com.google.android.youtube") {
+            return mediaPlayIntent(plan.query, installed.packageName)
+        }
         if (plan.query != null && installed.packageName == "com.google.android.youtube") {
             return Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse("https://www.youtube.com/results?search_query=${encode(plan.query)}")
             ).setPackage(installed.packageName)
         }
+        if (plan.query != null && plan.playRequested && installed.packageName == "com.spotify.music") {
+            return mediaPlayIntent(plan.query, installed.packageName)
+        }
         if (plan.query != null && installed.packageName == "com.spotify.music") {
-            return Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH).apply {
-                setPackage(installed.packageName)
-                putExtra(SearchManager.QUERY, plan.query)
-                putExtra(MediaStore.EXTRA_MEDIA_FOCUS, MediaStore.Audio.Media.ENTRY_CONTENT_TYPE)
-            }
+            return Intent(Intent.ACTION_VIEW, Uri.parse(spotifyContentUrl(plan.query)))
+                .setPackage(installed.packageName)
         }
         if (plan.query != null && installed.packageName == "com.google.android.apps.maps") {
             return Intent(
@@ -126,5 +129,12 @@ class AppTaskExecutor(context: Context) {
 
     private fun encode(value: String): String =
         URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+
+    private fun mediaPlayIntent(query: String, packageName: String): Intent =
+        Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH).apply {
+            setPackage(packageName)
+            putExtra(SearchManager.QUERY, query)
+            putExtra(MediaStore.EXTRA_MEDIA_FOCUS, MediaStore.Audio.Media.ENTRY_CONTENT_TYPE)
+        }
 
 }
